@@ -14,12 +14,12 @@ const INICIAIS = [
   ['kits-3','kits',3,'Júnior escolher as 20 peças de outlet (fins promocionais)','Júnior / Gabriel',''],
   ['kits-4','kits',4,'Conferir fotos e códigos dos produtos no Drive','Gabriel / Júnior',''],
   ['kits-5','kits',5,'Organizar a separação dos materiais','Márcio / Júnior / Diego','Márcio já avisou que vai iniciar'],
-  ['fin-1','financeiro',1,'Planilha de projeção de 12 meses: custos, markup 3 em todas as peças, comissões, margem para promoções','Leandro / Julia',''],
+  ['fin-1','financeiro',1,'Planilha de projeção de 12 meses: custos, markup 3 em todas as peças, comissões, margem para promoções','Leandro / Luiza',''],
   ['fin-2','financeiro',2,'Sistema no-code de projetado x realizado (com relatórios diários do Gabriel)','Diego','Depois da planilha'],
   ['fin-3','financeiro',3,'Planilha de taxas dos canais de venda (20% a 25%) + dados dos produtos','Gabriel',''],
   ['fin-4','financeiro',4,'Fechar regra de parcelamento com o Rosito: coleção nova até 5x, coleção antiga/parada até 10x sem juros','Diego',''],
-  ['fin-5','financeiro',5,'Definir teto de vendas e prazos de repasse ao Rosito (ainda em aberto)','Diego / Julia','Pendente'],
-  ['fin-6','financeiro',6,'Levantar parcelamento, antecipação de recebíveis e taxas das plataformas','Julia',''],
+  ['fin-5','financeiro',5,'Definir teto de vendas e prazos de repasse ao Rosito (ainda em aberto)','Diego / Luiza','Pendente'],
+  ['fin-6','financeiro',6,'Levantar parcelamento, antecipação de recebíveis e taxas das plataformas','Luiza',''],
   ['log-1','logistica',1,'Alinhar com o Júnior: antecedência, volume e limite diário de pedidos, prazos de postagem','Gabriel','Risco: picos de ~1.000 pedidos/dia'],
   ['mkt-1','marketing',1,'Prospectar 20 a 30 influenciadores para teste (filtros: acessórios, público ~80% feminino)','Gabriel / Leandro','Contatos na semana de 23/11'],
   ['mkt-2','marketing',2,'Definir comissão dos afiliados e valor de incentivo por publicação','Grupo',''],
@@ -38,18 +38,19 @@ const FIELDS = ["secao", "ordem", "texto", "resp", "prazo", "feito"];
 const json = (d, s = 200) => new Response(JSON.stringify(d), { status: s, headers: { "content-type": "application/json", "cache-control": "no-store" } });
 const clean = (b) => { const o = {}; FIELDS.forEach(k => { if (k in b) o[k] = k === "feito" ? !!b[k] : k === "ordem" ? Number(b[k]) || 0 : String(b[k]).slice(0, 2000); }); return o; };
 
+const RENAMES = [[/D1ego/g, "Diego"], [/\bJulia\b/g, "Luiza"]];
+
 async function fixNames(store) {
-  if (await store.get("meta/fix-diego")) return;
+  if (await store.get("meta/fix-names-v2")) return;
   const { blobs } = await store.list({ prefix: "item/" });
+  const fix = v => RENAMES.reduce((t, [re, to]) => t.replace(re, to), String(v || ""));
   await Promise.all(blobs.map(async b => {
     const it = await store.get(b.key, { type: "json" });
     if (!it) return;
-    const fix = v => String(v || "").replace(/D1ego/g, "Diego");
-    if ([it.texto, it.resp, it.prazo].some(v => String(v || "").includes("D1ego"))) {
-      await store.setJSON(b.key, { ...it, texto: fix(it.texto), resp: fix(it.resp), prazo: fix(it.prazo) });
-    }
+    const n = { ...it, texto: fix(it.texto), resp: fix(it.resp), prazo: fix(it.prazo) };
+    if (n.texto !== it.texto || n.resp !== it.resp || n.prazo !== it.prazo) await store.setJSON(b.key, n);
   }));
-  await store.set("meta/fix-diego", "1");
+  await store.set("meta/fix-names-v2", "1");
 }
 
 async function seed(store) {
