@@ -154,7 +154,7 @@ async function req(method,path,body){const r=await fetch("/api/"+path,{method,he
 const ROUTES={listar:()=>req("GET","state"),atualizar:(id,p)=>req("PATCH","itens/"+encodeURIComponent(id),p),criar:(b)=>req("POST","itens",b).then(d=>d.id),excluir:(id)=>req("DELETE","itens/"+encodeURIComponent(id)),salvarAeroporto:(d)=>req("PUT","aeroporto",d)};
 function api(fn,...args){return ROUTES[fn](...args);}
 
-function owners(){const set=new Set();items.forEach(i=>(i.resp||"").split("/").map(s=>s.trim()).filter(Boolean).forEach(n=>set.add(n)));return ["Todos",...[...set].sort((a,b)=>a.localeCompare(b,"pt"))];}
+function owners(){const set=new Set();items.forEach(i=>(i.resp||"").split("/").map(s=>s.trim()).filter(Boolean).forEach(n=>{if(n.toLowerCase()!=="todos")set.add(n);}));return ["Todos",...[...set].sort((a,b)=>a.localeCompare(b,"pt"))];}
 function visible(i){return filter==="Todos"||(i.resp||"").split("/").map(s=>s.trim()).includes(filter);}
 
 function render(){
